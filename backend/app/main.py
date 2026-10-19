@@ -7,7 +7,6 @@ import logging
 
 from app.config import settings
 from app.database import init_db
-from app.services.seeder import seed_demo_history_if_needed
 from app.serial.collector import serial_collector
 from app.services.simulation_worker import simulation_worker
 
@@ -28,16 +27,9 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Initializing LumiSense Database...")
     init_db()
-    
-    logger.info("Checking initial demo historical records...")
-    seed_demo_history_if_needed(target_count=600)
 
     logger.info("Starting background serial collector...")
     serial_collector.start()
-
-    if settings.DEFAULT_SIMULATION_MODE:
-        logger.info("Starting sensor simulation worker...")
-        simulation_worker.start()
 
     yield
 

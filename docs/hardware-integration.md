@@ -10,7 +10,7 @@ This guide covers physical wiring, calibration steps, and serial integration for
 2. **Light Sensor:** LDR Light Dependent Resistor module (LM393-based with Analog Output AO pin).
 3. **Motion Sensor:** HC-SR501 Pyroelectric Infrared (PIR) Sensor.
 4. **Connection:** Standard USB Type A-to-B cable to host Windows PC.
-5. **(Future Sensor):** DHT11 / DHT22 Digital Temperature & Humidity Sensor.
+5. **Temperature and humidity:** DHT11 sensor (firmware configured for DHT11).
 
 ---
 
@@ -25,7 +25,7 @@ This guide covers physical wiring, calibration steps, and serial integration for
 | **HC-SR501 VCC** | 5V | Power | Requires 4.5V–12V DC |
 | **HC-SR501 GND** | GND | Ground | Common system ground |
 | **HC-SR501 OUT** | **D2** | Digital In | HIGH = Motion, LOW = Idle |
-| *(Future) DHT11 DATA* | **D4** | Digital I/O | Single-bus communication |
+| **DHT11 DATA** | **D7** | Digital I/O | Requires the Adafruit DHT library |
 
 ---
 
@@ -41,6 +41,11 @@ This guide covers physical wiring, calibration steps, and serial integration for
 * **Sensitivity Potentiometer:** Set midway (~4 to 5 meters).
 * **Time Delay Potentiometer:** Set fully counterclockwise (~3 seconds duration) so the system receives fast updates.
 * **Jumper (H vs L):** Set to **H (Repeatable trigger)** mode.
+
+### 3.3. DHT11 Temperature and Humidity
+* Connect DATA to D7, VCC to 5V, and GND to GND.
+* Install **DHT sensor library by Adafruit** and **Adafruit Unified Sensor** in Arduino IDE Library Manager.
+* The firmware sends temperature and humidity as JSON fields. A failed or missing DHT reading is transmitted as `null`; the dashboard does not substitute simulated values.
 
 ---
 

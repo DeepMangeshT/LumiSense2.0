@@ -27,6 +27,7 @@ Returns service availability status.
 
 ### `GET /api/status`
 Returns unified hardware connectivity, database counts, and background daemon statuses.
+* `database_records_count` is the count of real hardware readings. Sample/demo readings are not inserted on application startup.
 * **Response (200 OK):**
 ```json
 {
@@ -57,9 +58,11 @@ Updates runtime parameters (COM port, baud rate, smoothing window, simulation to
 
 ### `GET /api/sensors/latest`
 Returns the most recent validated sensor frame.
+* When the Arduino is connected, this endpoint returns only real sensor readings (or `null` until its first valid frame arrives); seeded and simulated rows are excluded.
 
 ### `GET /api/sensors/history?limit=60&hours=1`
 Returns chronological sensor readings for graphing.
+* When the Arduino is connected, only readings collected from hardware are returned.
 * **Query Parameters:**
   * `limit` (int, default: 60, max: 1000): Maximum records returned.
   * `hours` (float, optional): Time window in hours.
@@ -67,6 +70,7 @@ Returns chronological sensor readings for graphing.
 ### `GET /api/sensors/analytics?timeframe=24h`
 Returns aggregated diurnal light curves, motion activity rates, and min/max/average statistics.
 * **Supported timeframes:** `'1h'`, `'24h'`, `'7d'`, `'all'`.
+* While the Arduino is connected, the aggregates are calculated from real hardware readings only.
 
 ---
 

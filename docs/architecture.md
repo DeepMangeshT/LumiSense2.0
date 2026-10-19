@@ -22,7 +22,7 @@ Key design principles:
 ┌────────────────────────────────────────────────────────┐
 │                   PHYSICAL SENSORS                     │
 │   • LDR Light Sensor (AO)    • HC-SR501 PIR (D2)       │
-│   • (Future) DHT11 Temp/Humidity Sensor (D4)           │
+│   • DHT11 Temp/Humidity Sensor (D7)                    │
 └──────────────────────────┬─────────────────────────────┘
                            │ 10-bit ADC / Digital High-Low
                            ▼

@@ -54,7 +54,7 @@ export default function Dashboard({ systemStatus, setActiveTab }) {
         api.getEfficiencyScore().catch(() => null),
       ]);
 
-      if (latest) setLatestReading(latest);
+      setLatestReading(latest);
       if (hist) setHistory(hist);
       if (eff) setEfficiencyScore(eff);
       setErrorNotice(null);
@@ -85,6 +85,15 @@ export default function Dashboard({ systemStatus, setActiveTab }) {
   });
 
   const isMotionActive = latestReading?.motion === 1;
+  const sourceLabel = latestReading?.source === 'real'
+    ? 'Real Hardware'
+    : latestReading?.source === 'simulated'
+      ? 'Simulated Stream'
+      : systemStatus?.arduino_connected
+        ? 'Waiting for live data'
+        : systemStatus?.simulation_mode
+          ? 'Simulated Stream'
+          : 'No sensor data';
 
   return (
     <div className="page-body">
@@ -133,28 +142,28 @@ export default function Dashboard({ systemStatus, setActiveTab }) {
           badgeText="PROJECT SCORE"
         />
 
-        {/* Metric 5: Temperature (Future expansion) */}
+        {/* Metric 5: Live temperature from the connected DHT11 */}
         <MetricCard
           title="Ambient Temperature"
           value={latestReading?.temperature !== null && latestReading?.temperature !== undefined 
             ? `${latestReading.temperature} °C` 
             : "-- °C"}
-          subtext={latestReading?.temperature !== null ? "DHT11 sensor reading" : "Waiting for temperature sensor..."}
+          subtext={latestReading?.temperature !== null && latestReading?.temperature !== undefined ? "Live DHT11 reading" : "Waiting for DHT11 reading..."}
           icon={Thermometer}
           accent="cyan"
-          badgeText={latestReading?.temperature !== null ? "CONNECTED" : "DHT11 PENDING"}
+          badgeText={latestReading?.temperature !== null && latestReading?.temperature !== undefined ? "LIVE" : "DHT11 PENDING"}
         />
 
-        {/* Metric 6: Relative Humidity (Future expansion) */}
+        {/* Metric 6: Live humidity from the connected DHT11 */}
         <MetricCard
           title="Relative Humidity"
           value={latestReading?.humidity !== null && latestReading?.humidity !== undefined 
             ? `${latestReading.humidity} %` 
             : "-- %"}
-          subtext={latestReading?.humidity !== null ? "DHT11 sensor reading" : "Waiting for humidity sensor..."}
+          subtext={latestReading?.humidity !== null && latestReading?.humidity !== undefined ? "Live DHT11 reading" : "Waiting for DHT11 reading..."}
           icon={Droplets}
           accent="cyan"
-          badgeText={latestReading?.humidity !== null ? "CONNECTED" : "DHT11 PENDING"}
+          badgeText={latestReading?.humidity !== null && latestReading?.humidity !== undefined ? "LIVE" : "DHT11 PENDING"}
         />
       </div>
 
@@ -308,8 +317,8 @@ export default function Dashboard({ systemStatus, setActiveTab }) {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Source:</span>
-                <span style={{ color: latestReading?.source === 'real' ? '#10B981' : '#C084FC', fontWeight: 600 }}>
-                  {latestReading?.source === 'real' ? 'Real Hardware' : 'Simulated Stream'}
+                <span style={{ color: latestReading?.source === 'real' ? '#10B981' : latestReading?.source === 'simulated' ? '#C084FC' : 'var(--text-muted)', fontWeight: 600 }}>
+                  {sourceLabel}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

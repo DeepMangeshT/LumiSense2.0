@@ -17,7 +17,7 @@ export default function Settings({ systemStatus, refreshStatus }) {
   const [selectedPort, setSelectedPort] = useState('AUTO');
   const [baudRate, setBaudRate] = useState(9600);
   const [smoothingWindow, setSmoothingWindow] = useState(5);
-  const [simulationMode, setSimulationMode] = useState(true);
+  const [simulationMode, setSimulationMode] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState(null);

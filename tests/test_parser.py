@@ -48,6 +48,21 @@ def test_parse_json_format():
     assert parsed["temperature"] == 27.1
     assert parsed["humidity"] == 60.5
 
+def test_parse_json_preserves_zero_sensor_values():
+    parsed = SerialDataParser.parse_line('{"light": 0, "motion": 0}')
+    assert parsed is not None
+    assert parsed["light_raw"] == 0
+    assert parsed["motion"] == 0
+    assert SerialDataParser.parse_line('{"light": 100}') is None
+
+def test_parse_json_null_temperature_and_humidity():
+    parsed = SerialDataParser.parse_line(
+        '{"light": 100, "motion": 0, "temperature": null, "humidity": null}'
+    )
+    assert parsed is not None
+    assert parsed["temperature"] is None
+    assert parsed["humidity"] is None
+
 def test_parse_malformed():
     assert SerialDataParser.parse_line("") is None
     assert SerialDataParser.parse_line("Hello Arduino") is None

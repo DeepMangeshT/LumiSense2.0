@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 class SerialCollector:
     def __init__(self):
         self.port: Optional[str] = settings.SERIAL_PORT
+        self.active_port: Optional[str] = None
         self.baud_rate: int = settings.SERIAL_BAUD_RATE
         self.is_connected: bool = False
         self.is_running: bool = False
@@ -83,6 +84,7 @@ class SerialCollector:
                 except Exception:
                     pass
             self.is_connected = False
+            self.active_port = None
             self.status_message = "Stopped"
 
     def configure(self, port: Optional[str] = None, baud_rate: Optional[int] = None):
@@ -100,6 +102,7 @@ class SerialCollector:
                     pass
                 self.serial_instance = None
                 self.is_connected = False
+                self.active_port = None
 
     def _run_loop(self):
         """Worker loop that attempts connections and reads frames."""
@@ -117,8 +120,13 @@ class SerialCollector:
                 ser = serial.Serial(target_port, self.baud_rate, timeout=settings.SERIAL_TIMEOUT)
                 self.serial_instance = ser
                 self.is_connected = True
+                self.active_port = target_port
+                self.last_reading_time = None
                 self.status_message = f"Connected to {target_port} ({self.baud_rate} baud)"
                 log_system_event("ARDUINO_CONNECTED", f"Serial connection established on {target_port}", "INFO")
+
+                from app.services.simulation_worker import simulation_worker
+                simulation_worker.stop()
 
                 # Flush bootloader garbage
                 time.sleep(1.5)
@@ -142,6 +150,7 @@ class SerialCollector:
 
             except (serial.SerialException, OSError) as e:
                 self.is_connected = False
+                self.active_port = None
                 self.status_message = f"Disconnected: {e}. Retrying in {settings.SERIAL_RETRY_INTERVAL}s..."
                 logger.warning(self.status_message)
                 log_system_event("ARDUINO_DISCONNECTED", f"Serial disconnected on {target_port}: {e}", "WARNING")
@@ -153,6 +162,9 @@ class SerialCollector:
                     self.serial_instance = None
                 time.sleep(settings.SERIAL_RETRY_INTERVAL)
             except Exception as e:
+                self.is_connected = False
+                self.active_port = None
+                self.status_message = f"Serial collector error: {e}"
                 logger.error(f"Unexpected serial loop error: {e}")
                 time.sleep(settings.SERIAL_RETRY_INTERVAL)
 

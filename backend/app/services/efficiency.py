@@ -5,11 +5,10 @@ DISCLAIMER:
 This is a project-defined analytical score and should not be interpreted as a
 certified energy-efficiency standard or direct kWh measurement.
 """
-from typing import Dict, Any, List
-from datetime import datetime, timezone, timedelta
+from typing import Dict, Any, List, Optional
 from app.database import get_readings_history, get_anomalies
 
-def calculate_efficiency_score() -> Dict[str, Any]:
+def calculate_efficiency_score(source: Optional[str] = None) -> Dict[str, Any]:
     """Computes the project-defined LumiSense Efficiency Score based on the last 50 readings.
     Baseline is 100.
     Deductions are applied for:
@@ -17,7 +16,7 @@ def calculate_efficiency_score() -> Dict[str, Any]:
     - Unnecessary daytime over-illumination.
     - Active anomaly records.
     """
-    recent_readings = get_readings_history(limit=50)
+    recent_readings = get_readings_history(limit=50, source=source)
     if not recent_readings:
         return {
             "score": 85,

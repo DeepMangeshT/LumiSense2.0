@@ -128,24 +128,44 @@ def insert_reading(
     conn.close()
     return reading_id
 
-def get_latest_reading() -> Optional[Dict[str, Any]]:
+def get_latest_reading(source: Optional[str] = None) -> Optional[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM sensor_readings ORDER BY id DESC LIMIT 1")
+    if source is None:
+        cursor.execute("SELECT * FROM sensor_readings ORDER BY id DESC LIMIT 1")
+    else:
+        cursor.execute(
+            "SELECT * FROM sensor_readings WHERE source = ? ORDER BY id DESC LIMIT 1",
+            (source,)
+        )
     row = cursor.fetchone()
     conn.close()
     if row:
         return dict(row)
     return None
 
-def get_readings_history(limit: int = 100, hours: Optional[float] = None) -> List[Dict[str, Any]]:
+def get_readings_history(
+    limit: int = 100,
+    hours: Optional[float] = None,
+    source: Optional[str] = None
+) -> List[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
-    if hours:
+    source_clause = " AND source = ?" if source is not None else ""
+    source_params = (source,) if source is not None else ()
+    if hours is not None:
         since_time = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-        cursor.execute("SELECT * FROM sensor_readings WHERE timestamp >= ? ORDER BY timestamp ASC LIMIT ?", (since_time, limit))
+        cursor.execute(
+            f"SELECT * FROM sensor_readings WHERE timestamp >= ?{source_clause} "
+            "ORDER BY timestamp ASC LIMIT ?",
+            (since_time, *source_params, limit)
+        )
     else:
-        cursor.execute("SELECT * FROM (SELECT * FROM sensor_readings ORDER BY id DESC LIMIT ?) ORDER BY id ASC", (limit,))
+        cursor.execute(
+            f"SELECT * FROM (SELECT * FROM sensor_readings WHERE 1 = 1{source_clause} "
+            "ORDER BY id DESC LIMIT ?) ORDER BY id ASC",
+            (*source_params, limit)
+        )
     rows = cursor.fetchall()
     conn.close()
     return [dict(r) for r in rows]

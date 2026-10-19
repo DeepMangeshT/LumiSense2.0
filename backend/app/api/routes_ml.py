@@ -11,6 +11,7 @@ from app.models.schemas import (
 from app.ml.pipeline import ml_pipeline
 from app.database import get_anomalies, get_latest_reading
 from app.services.simulation import sensor_simulator
+from app.serial.collector import serial_collector
 
 router = APIRouter()
 
@@ -31,7 +32,9 @@ def train_ml_models(payload: MLTrainingRequest):
 @router.get("/prediction")
 def get_current_prediction():
     """Returns real-time predicted lighting demand for the current sensor state."""
-    latest = get_latest_reading()
+    if serial_collector.is_connected and serial_collector.last_reading_time is None:
+        return {"predicted_demand": 0.0, "status": "Waiting for the first live sensor reading"}
+    latest = get_latest_reading(source="real")
     if not latest:
         return {"predicted_demand": 0.0, "status": "No sensor readings available"}
     

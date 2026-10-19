@@ -19,7 +19,10 @@ class Settings:
     DATABASE_URL: str = f"sqlite:///{DATABASE_PATH}"
     
     # Serial Port Settings
-    SERIAL_PORT: Optional[str] = os.getenv("LUMISENSE_SERIAL_PORT", None) # None = Auto-detect
+    _serial_port = os.getenv("LUMISENSE_SERIAL_PORT")
+    SERIAL_PORT: Optional[str] = (
+        None if not _serial_port or _serial_port.strip().upper() == "AUTO" else _serial_port.strip()
+    )
     SERIAL_BAUD_RATE: int = int(os.getenv("LUMISENSE_BAUD_RATE", 9600))
     SERIAL_TIMEOUT: float = 1.0
     SERIAL_RETRY_INTERVAL: float = 3.0
@@ -30,7 +33,6 @@ class Settings:
     SMOOTHING_WINDOW_SIZE: int = int(os.getenv("LUMISENSE_SMOOTHING_WINDOW", 5))
     
     # Simulation Mode
-    DEFAULT_SIMULATION_MODE: bool = os.getenv("LUMISENSE_SIMULATION", "true").lower() in ("true", "1", "yes")
     SIMULATION_INTERVAL_SEC: float = 1.5
     
     # ML Thresholds

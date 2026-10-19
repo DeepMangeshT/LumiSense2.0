@@ -1,12 +1,18 @@
 """Simulation Mode API endpoints.
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.services.simulation_worker import simulation_worker
+from app.serial.collector import serial_collector
 
 router = APIRouter()
 
 @router.post("/start")
 def start_simulation():
+    if serial_collector.is_connected:
+        raise HTTPException(
+            status_code=409,
+            detail="Simulation cannot start while the Arduino is connected; live sensor data has priority."
+        )
     simulation_worker.start()
     return {
         "success": True,

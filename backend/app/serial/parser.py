@@ -2,7 +2,7 @@
 Parses multiple incoming formats:
 1. Legacy text format: "Light: 222 | Motion: YES"
 2. CSV format: "222,1" or "222,1,28.4,63.2" or "timestamp,222,1"
-3. JSON format: {"light": 222, "motion": 1, ...}
+3. JSON format: {"light": 222, "motion": 1, "temperature": 25.0, ...}
 """
 import re
 import json
@@ -34,9 +34,13 @@ class SerialDataParser:
         if line.startswith("{") and line.endswith("}"):
             try:
                 data = json.loads(line)
+                if not isinstance(data, dict):
+                    logger.warning("JSON sensor payload must be an object")
+                    return None
                 return SerialDataParser._normalize_dict(data)
-            except json.JSONDecodeError:
-                pass
+            except (json.JSONDecodeError, TypeError, ValueError, OverflowError) as error:
+                logger.warning("Could not parse JSON sensor line: %s", error)
+                return None
                 
         # 2. Try Standard Text format: "Light: 222 | Motion: YES"
         match = SerialDataParser.TEXT_PATTERN.search(line)
@@ -87,10 +91,10 @@ class SerialDataParser:
     @staticmethod
     def _normalize_dict(d: dict) -> Dict[str, Any]:
         """Normalizes keys from JSON dict."""
-        light = d.get("light") or d.get("light_raw") or d.get("ldr") or d.get("light_level")
-        motion = d.get("motion") or d.get("pir") or d.get("presence") or d.get("occupancy")
-        temp = d.get("temperature") or d.get("temp")
-        hum = d.get("humidity") or d.get("hum")
+        light = next((d[key] for key in ("light", "light_raw", "ldr", "light_level") if d.get(key) is not None), None)
+        motion = next((d[key] for key in ("motion", "pir", "presence", "occupancy") if d.get(key) is not None), None)
+        temp = next((d[key] for key in ("temperature", "temp") if d.get(key) is not None), None)
+        hum = next((d[key] for key in ("humidity", "hum") if d.get(key) is not None), None)
         
         if light is None or motion is None:
             raise ValueError(f"Missing required light or motion in JSON: {d}")

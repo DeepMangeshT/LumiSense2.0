@@ -27,6 +27,7 @@ class SimulationWorker:
         self.thread: Optional[threading.Thread] = None
         self.interval: float = settings.SIMULATION_INTERVAL_SEC
         self._lock = threading.Lock()
+        self._stop_event = threading.Event()
         self.last_reading_time: Optional[datetime] = None
 
     def start(self):
@@ -34,6 +35,7 @@ class SimulationWorker:
             if self.is_running:
                 return
             self.is_running = True
+            self._stop_event.clear()
             self.thread = threading.Thread(target=self._run, daemon=True)
             self.thread.start()
             logger.info("Simulation Worker started.")
@@ -44,8 +46,12 @@ class SimulationWorker:
             if not self.is_running:
                 return
             self.is_running = False
-            logger.info("Simulation Worker stopped.")
-            log_system_event("SIMULATION_STOPPED", "Sensor simulation mode deactivated", "INFO")
+            self._stop_event.set()
+            if self.thread and self.thread is not threading.current_thread():
+                self.thread.join()
+            self.thread = None
+        logger.info("Simulation Worker stopped.")
+        log_system_event("SIMULATION_STOPPED", "Sensor simulation mode deactivated", "INFO")
 
     def _run(self):
         while self.is_running:
@@ -112,7 +118,7 @@ class SimulationWorker:
             except Exception as e:
                 logger.error(f"Error in simulation loop: {e}")
 
-            time.sleep(self.interval)
+            self._stop_event.wait(self.interval)
 
 # Global simulation worker instance
 simulation_worker = SimulationWorker()

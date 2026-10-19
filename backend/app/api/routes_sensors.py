@@ -7,12 +7,18 @@ import numpy as np
 
 from app.models.schemas import SensorReadingResponse
 from app.database import get_latest_reading, get_readings_history, get_connection
+from app.serial.collector import serial_collector
 
 router = APIRouter()
 
+def _active_source() -> str:
+    return "real"
+
 @router.get("/latest", response_model=Optional[SensorReadingResponse])
 def get_latest_sensor_reading():
-    reading = get_latest_reading()
+    if serial_collector.is_connected and serial_collector.last_reading_time is None:
+        return None
+    reading = get_latest_reading(source=_active_source())
     if not reading:
         return None
     return SensorReadingResponse(**reading)
@@ -22,7 +28,7 @@ def get_sensor_history(
     limit: int = Query(60, ge=1, le=1000, description="Max readings to return"),
     hours: Optional[float] = Query(None, ge=0.1, le=168.0, description="History window in hours")
 ):
-    rows = get_readings_history(limit=limit, hours=hours)
+    rows = get_readings_history(limit=limit, hours=hours, source=_active_source())
     return [SensorReadingResponse(**r) for r in rows]
 
 @router.get("/analytics")
@@ -33,7 +39,7 @@ def get_sensor_analytics(
     hours_map = {"1h": 1.0, "24h": 24.0, "7d": 168.0, "all": None}
     hours = hours_map.get(timeframe, 24.0)
 
-    rows = get_readings_history(limit=1000, hours=hours)
+    rows = get_readings_history(limit=1000, hours=hours, source=_active_source())
     if not rows:
         return {
             "timeframe": timeframe,

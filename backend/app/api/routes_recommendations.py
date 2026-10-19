@@ -18,5 +18,5 @@ def get_energy_recommendations(limit: int = Query(20, ge=1, le=50)):
 @router.get("/score", response_model=EfficiencyScoreResponse)
 def get_lumisense_efficiency_score():
     """Returns the project-defined analytical LumiSense Efficiency Score (0-100)."""
-    score_data = calculate_efficiency_score()
+    score_data = calculate_efficiency_score(source="real")
     return EfficiencyScoreResponse(**score_data)

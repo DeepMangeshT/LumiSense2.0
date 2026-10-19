@@ -17,20 +17,18 @@
      - GND  -> Arduino GND
      - OUT  -> Arduino Digital Pin D2 (Binary occupancy signal: HIGH / LOW)
 
-  3. Optional Future Sensor: DHT11 Temperature & Humidity:
+  3. DHT11 Temperature & Humidity:
      - VCC  -> Arduino 5V
      - GND  -> Arduino GND
-     - DATA -> Arduino Digital Pin D4
-     (Set ENABLE_DHT to 1 when DHT library and sensor are connected)
+     - DATA -> Arduino Digital Pin D7
+     (DHT library and sensor are required for live temperature and humidity)
      
   Serial Communication:
   ---------------------
   - Baud Rate: 9600 bps
   - USB Type A-to-B cable to Host PC
   - Formats Supported:
-      FORMAT_TEXT: "Light: 222 | Motion: YES"
-      FORMAT_CSV:  "222,1" (or "222,1,26.5,58.0" with DHT)
-      FORMAT_JSON: "{\"light\":222,\"motion\":1}"
+      FORMAT_JSON: "{\"light\":222,\"motion\":1,\"temperature\":25.0,\"humidity\":50.0}"
   =============================================================================
 */
 
@@ -45,14 +43,14 @@
 // 1 = Legacy Text Format ("Light: 222 | Motion: YES")
 // 2 = Structured CSV ("222,1")
 // 3 = Structured JSON ("{\"light\":222,\"motion\":1}")
-#define OUTPUT_FORMAT 1
+#define OUTPUT_FORMAT 3
 
-// Future DHT11 expansion toggle (0 = Disabled, 1 = Enabled)
-#define ENABLE_DHT    0
+// Enable when a DHT11 is connected to D7 and the Adafruit DHT library is installed.
+#define ENABLE_DHT    1
 
 #if ENABLE_DHT
   #include <DHT.h>
-  #define DHTPIN 4
+  #define DHTPIN 7
   #define DHTTYPE DHT11
   DHT dht(DHTPIN, DHTTYPE);
 #endif
@@ -91,16 +89,12 @@ void loop() {
   int pirState = digitalRead(PIR_PIN);
   int motionDetected = (pirState == HIGH) ? 1 : 0;
 
-  // 3. Optional Future Sensor Readings
-  float temperature = 0.0;
-  float humidity = 0.0;
+  // 3. Read DHT11 temperature and humidity
+  float temperature = NAN;
+  float humidity = NAN;
   #if ENABLE_DHT
     temperature = dht.readTemperature();
     humidity = dht.readHumidity();
-    if (isnan(temperature) || isnan(humidity)) {
-      temperature = 0.0;
-      humidity = 0.0;
-    }
   #endif
 
   // 4. Visual Heartbeat Blink
@@ -133,12 +127,18 @@ void loop() {
     Serial.print(lightRaw);
     Serial.print(",\"motion\":");
     Serial.print(motionDetected);
-    #if ENABLE_DHT
       Serial.print(",\"temperature\":");
-      Serial.print(temperature, 1);
+      if (isnan(temperature)) {
+        Serial.print("null");
+      } else {
+        Serial.print(temperature, 1);
+      }
       Serial.print(",\"humidity\":");
-      Serial.print(humidity, 1);
-    #endif
+      if (isnan(humidity)) {
+        Serial.print("null");
+      } else {
+        Serial.print(humidity, 1);
+      }
     Serial.println("}");
   #endif
 

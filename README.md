@@ -68,7 +68,7 @@ A modern, responsive web dashboard built with **React** and **Vite** displays li
 │  [GND] ──────┼──────────┼───────────────────────────── │
 │  [A0]  ──────┼──────────┼─────────────── (LDR AO)      │
 │  [D2]  ──────┼──────────┴─────────────── (PIR OUT)     │
-│  [D4]  ──────┴────────────────────────── (DHT11 DATA)* │
+│  [D7]  ──────┴────────────────────────── (DHT11 DATA)  │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -81,7 +81,7 @@ A modern, responsive web dashboard built with **React** and **Vite** displays li
 | **HC-SR501 VCC**| **5V** | 5V DC Power |
 | **HC-SR501 GND**| **GND** | Ground reference |
 | **HC-SR501 OUT**| **D2** | **Digital Input** (HIGH = Motion detected, LOW = Idle) |
-| *(Future) DHT11*| **D4** | Digital single-bus data pin |
+| **DHT11** | **D7** | Digital single-bus data pin |
 
 ---
 
@@ -133,7 +133,7 @@ python backend/run.py
 ```
 * Backend API: **http://localhost:8000**
 * Interactive OpenAPI Documentation: **http://localhost:8000/docs**
-* On first startup, the system automatically creates `data/lumisense.db`, pre-seeds 24-hour historical records for immediate analytics, and starts in **Simulation Mode** if no Arduino is connected.
+* On first startup, the system creates `data/lumisense.db` without inserting sample readings and does not start simulation. Sensor APIs and dashboard analytics use hardware readings only; previously stored demo records are not removed, but are excluded from the live sensor views.
 
 ### Starting the Frontend Dashboard
 From the `frontend` directory:
@@ -148,12 +148,13 @@ Open your browser and navigate to: **http://localhost:5173**
 
 1. Connect your Arduino Uno to your PC using the USB A-to-B cable.
 2. Launch the **Arduino IDE**.
-3. Open `arduino/lumisense.ino`.
-4. Go to **Tools > Board** and select **Arduino Uno**.
-5. Go to **Tools > Port** and choose your Arduino COM port (e.g., `COM3`, `COM4`).
-6. Click **Upload** (`Ctrl + U`).
-7. **Important:** Close the Arduino IDE Serial Monitor before starting the LumiSense backend, as Windows allows only one application to hold an open serial connection.
-8. In the LumiSense Web Dashboard, navigate to **Settings** and ensure your COM port is selected (or set to **AUTO**). The system will automatically detect the Arduino and switch to real hardware data!
+3. Install **DHT sensor library by Adafruit** and **Adafruit Unified Sensor** from Library Manager, and wire the DHT11 DATA pin to D7 (VCC to 5V, GND to GND).
+4. Open `arduino/lumisense.ino`.
+5. Go to **Tools > Board** and select **Arduino Uno**.
+6. Go to **Tools > Port** and choose your Arduino COM port (e.g., `COM3`, `COM4`).
+7. Click **Upload** (`Ctrl + U`).
+8. **Important:** Close the Arduino IDE Serial Monitor before starting the LumiSense backend, as Windows allows only one application to hold an open serial connection.
+9. In the LumiSense Web Dashboard, navigate to **Settings** and ensure your COM port is selected (or set to **AUTO**). The system will automatically detect the Arduino and use real hardware data.
 
 ---
 
@@ -163,7 +164,7 @@ Run the full pytest suite:
 ```powershell
 python -m pytest tests/ -v
 ```
-All 16 unit and integration tests verify:
+The unit and integration tests verify:
 * Multi-format serial parsing (Legacy text `"Light: 222 | Motion: YES"`, CSV `"222,1"`, JSON)
 * Data boundary validation (ADC 0–1023, PIR 0/1, temperature, humidity)
 * Moving average signal filtering
